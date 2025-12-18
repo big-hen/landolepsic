@@ -1,0 +1,199 @@
+/* --- Global Body and Font Reset --- */
+body {
+    background-color: #1a1a1a; /* Dark background */
+    color: #f0e6d2; /* Light, parchment-like text color */
+    font-family: 'Georgia', serif; /* A classic, easy-to-read font */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0; /* Remove default margin */
+}
+
+/* --- Main Game Container --- */
+#game-container {
+    width: 90%;
+    max-width: 700px; /* Limit the width for readability */
+    padding: 30px;
+    border: 3px solid #6b4c3b; /* A brown border for a wooden/parchment look */
+    border-radius: 10px;
+    background-color: #2b2a29; /* Slightly lighter inner background */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+    /* text-align: center; */ /* No longer needed for centering flex items */
+
+    /* NEW Flexbox properties */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch; /* Stretch items to fill the width */
+    gap: 20px;
+}
+
+/* --- Text and Headers --- */
+#game-text {
+    display: 'flex';
+    font-size: 1.15em;
+    line-height: 1.6;
+    /* margin-bottom: 25px; */ /* Replaced by gap */
+    padding: 15px;
+    background-color: #383736;
+    border-left: 5px solid #a38a78; /* Accent line for narrative text */
+    text-align: left;
+}
+
+/* --- NEW: Carousel Styling --- */
+#character-carousel {
+    display: none; /* Hidden by default, shown only in character_select scene */
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+}
+
+#carousel-slots {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* Align items to the bottom edge */
+    gap: 40px; /* Increase spacing between characters */
+}
+
+.carousel-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0.5; /* Inactive characters are faded */
+    transform: scale(0.85);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+/* Remove border from sprites in the carousel */
+.carousel-slot .sprite-container {
+    border: none;
+}
+
+.carousel-slot.active {
+    opacity: 1; /* The selected character is fully visible */
+    transform: scale(1);
+}
+
+.carousel-char-name {
+    margin-top: 10px;
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #f0e6d2;
+}
+
+.carousel-arrow {
+    background: none;
+    border: none;
+    color: #a38a78;
+    font-size: 3em;
+    cursor: pointer;
+    padding: 0 20px;
+}
+
+.carousel-arrow:hover {
+    color: #fff;
+    background: none; /* Override default button hover */
+    transform: none; /* Override default button hover */
+    border: none; /* Override default button hover */
+}
+
+/* --- Character and Puzzle Display --- */
+#character-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px; /* This will apply to the sprite and puzzle image inside */
+}
+
+#player-sprite,
+#puzzle-image {
+    display: block; /* Ensure images are treated as blocks */
+    /* margin: 10px auto; */ /* Replaced by flex alignment */
+    border: 2px solid #a38a78;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    image-rendering: pixelated; /* Essential for keeping pixel art crisp */
+}
+
+/* --- Choice Container and Buttons --- */
+#choice-container,
+#carousel-choice-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%; /* Ensure it stretches to the container width */
+}
+
+button {
+    /* Basic Button Styling */
+    padding: 12px 20px;
+    font-size: 1em;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: bold;
+    border: 2px solid #a38a78;
+    border-radius: 5px;
+
+    /* Fantasy/RPG Look */
+    background-color: #5d4a36; /* Dark wood/leather tone */
+    color: #f0e6d2;
+    transition: background-color 0.15s, transform 0.1s;
+}
+
+button:hover {
+    background-color: #7b634e; /* Slightly lighter on hover */
+    transform: translateY(-1px); /* Small lift effect */
+    border-color: #fff;
+}
+
+/* Add this new block to your style.css */
+#player-sprite-container {
+    /* Dimensions of a single character frame */
+    width: 32px;
+    height: 32px;
+    /* margin: 25px auto 10px auto; */ /* Replaced by flex alignment */
+    border: 2px solid #a38a78;
+    border-radius: 5px;
+
+    /* The background-image is set by game.js */
+
+    /* Do not scale the background image itself */
+    background-repeat: no-repeat;
+
+    /* Optional: Scale the sprite up (e.g., 2x size of 32x32) */
+    transform: scale(2);
+    image-rendering: pixelated;
+}
+
+/* Add this new block to your style.css */
+#party-leader-sprite-container {
+    /* Dimensions of a single character frame */
+    width: 32px;
+    height: 32px;
+    border: 2px solid #a38a78;
+    border-radius: 5px;
+
+    /* The background-image is set by game.js */
+    background-repeat: no-repeat;
+
+    /* Optional: Scale the sprite up (e.g., 2x size of 32x32) */
+    transform: scale(2);
+    image-rendering: pixelated;
+}
+
+.sprite-container {
+    /* Dimensions of a single character frame */
+    width: 32px;
+    height: 32px;
+    border: 2px solid #a38a78;
+    border-radius: 5px;
+
+    /* The background-image is set by game.js */
+    background-repeat: no-repeat;
+    /* Use the natural size of the sprite sheet */
+    background-size: auto;
+
+    /* Scale the whole element to make the sprite appear larger */
+    transform: scale(2);
+    image-rendering: pixelated;
+}
