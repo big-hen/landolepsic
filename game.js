@@ -7,6 +7,7 @@ const gameState = {
 
     // Game progression
     currentScene: 'character_select',
+    currentPuzzleIndex: 0, // Track which puzzle in the sequence the player is on
 
     // Puzzle completion flags
     chessPuzzleComplete: false,
@@ -14,47 +15,50 @@ const gameState = {
     yugiohPuzzleComplete: false,
     mtgPuzzleComplete: false, // <-- NEW FLAG
     vgcComplete: false, // <-- NEW FLAG
+    diablo2Complete: false, // <-- NEW FLAG
+    starwarsComplete: false, // <-- NEW FLAG
+    marioComplete: false, // <-- NEW FLAG
     // Final outcome
     joinedParty: false,
 };
 
 const characters = {
     boss: {
-        name: 'Boss',
+        name: 'Boss', //rogue
         sprite: 'rogues.png',
-        puzzle: 'chess',
+        puzzles: ['chess', 'starwars'], // Array of puzzles in sequence
         // The pixel offsets (32px * column, 32px * row)
         offset: { x: -32 * 3, y: 0 },
     },
     flash: {
-        name: 'Flash',
+        name: 'Flash', // crusader
         sprite: 'rogues.png',
-        puzzle: 'starcraft',
+        puzzles: ['starcraft', 'diablo2'], // Array of puzzles in sequence
         // Character is in the 2nd column (index 1)
         offset: { x: -32, y: -32 * 3 },
     },
     dizzle: {
-        name: 'Dizzle',
+        name: 'Dizzle', // priest
         sprite: 'rogues.png',
-        puzzle: 'yugioh',
+        puzzles: ['yugioh', 'pokemon'], // Array of puzzles in sequence
         offset: { x: -32 * 2, y: -32 * 2 },
     },
     davis: {
-        name: 'Davis',
+        name: 'Davis', // bard
         sprite: 'rogues.png',
-        puzzle: 'pokemon',
+        puzzles: ['pokemon'], // Array of puzzles in sequence
         offset: { x: -32 * 4, y: -32 * 4 },
     },
     scabs: {
-        name: 'Scabs',
+        name: 'Scabs', // ranger?
         sprite: 'rogues.png',
-        puzzle: 'mtg',
+        puzzles: ['mtg'], // Array of puzzles in sequence
         offset: { x: -32 * 2, y: -32 * 3 },
     },
     monty: {
-        name: 'Monty',
+        name: 'Monty', // mage
         sprite: 'rogues.png',
-        puzzle: 'chess',
+        puzzles: ['mario'], // Array of puzzles in sequence
         offset: { x: 0, y: -32 * 4 },
     },
     // Add more characters here using their correct (negative) offsets
@@ -195,7 +199,7 @@ function handleCharacterSelect(charKey) {
 
 function renderForestEntrance() {
     const charName = characters[gameState.playerCharacter].name;
-    gameTextEl.innerHTML = `**${charName}**, you stand at the edge of the Whispering Woods. To proceed, you must pass the Trial of the Old Path.`;
+    gameTextEl.innerHTML = `<strong>${charName}</strong>, you stand at the edge of the Whispering Woods. To proceed, you must pass the Trial of the Old Path.`;
 
     const button = document.createElement('button');
     button.innerText = 'Step onto the Old Path';
@@ -206,34 +210,58 @@ function renderForestEntrance() {
     choiceContainerEl.appendChild(button);
 }
 
+// Helper function to complete current puzzle and move to next
+function completePuzzle(puzzleType) {
+    // Mark the specific puzzle as complete
+    const completionFlags = {
+        chess: 'chessPuzzleComplete',
+        starcraft: 'starcraftPuzzleComplete',
+        yugioh: 'yugiohPuzzleComplete',
+        mtg: 'mtgPuzzleComplete',
+        pokemon: 'vgcComplete',
+        diablo2: 'diablo2Complete',
+        starwars: 'starwarsComplete',
+        mario: 'marioComplete',
+    };
+
+    if (completionFlags[puzzleType]) {
+        gameState[completionFlags[puzzleType]] = true;
+    }
+
+    // Advance to next puzzle
+    gameState.currentPuzzleIndex++;
+    gameState.currentScene = 'puzzle_gate';
+    renderScene();
+}
+
 function renderPuzzleGate() {
-    const puzzleType = characters[gameState.playerCharacter].puzzle;
+    const charData = characters[gameState.playerCharacter];
+    const puzzles = charData.puzzles;
+    const currentIndex = gameState.currentPuzzleIndex;
 
-    if (puzzleType === 'chess' && !gameState.chessPuzzleComplete) {
-        return renderChessPuzzle();
-    }
-    if (puzzleType === 'starcraft' && !gameState.starcraftPuzzleComplete) {
-        return renderStarcraftPuzzle();
-    }
-    if (puzzleType === 'yugioh' && !gameState.yugiohPuzzleComplete) {
-        return renderYugiohPuzzle();
-    }
-    if (puzzleType === 'mtg' && !gameState.mtgPuzzleComplete) {
-        return renderMtgPuzzle();
-    }
-    if (puzzleType === 'pokemon' && !gameState.vgcComplete) {
-        return renderPokemonPuzzle();
-    }
-
-    // If the required puzzle is complete, move to the final stage
-    if (
-        gameState.chessPuzzleComplete ||
-        gameState.starcraftPuzzleComplete ||
-        gameState.yugiohPuzzleComplete ||
-        gameState.mtgPuzzleComplete
-    ) {
+    // Check if all puzzles are complete
+    if (currentIndex >= puzzles.length) {
         gameState.currentScene = 'party_invite';
         return renderScene();
+    }
+
+    // Get the current puzzle type
+    const puzzleType = puzzles[currentIndex];
+
+    // Render the appropriate puzzle based on type
+    const puzzleRenderers = {
+        chess: renderChessPuzzle,
+        starcraft: renderStarcraftPuzzle,
+        yugioh: renderYugiohPuzzle,
+        mtg: renderMtgPuzzle,
+        pokemon: renderPokemonPuzzle,
+        diablo2: renderDiablo2Puzzle,
+        starwars: renderStarWarsPuzzle,
+        mario: renderMarioPuzzle,
+    };
+
+    if (puzzleRenderers[puzzleType]) {
+        return puzzleRenderers[puzzleType]();
     }
 
     // Fallback if no specific puzzle is defined
@@ -309,21 +337,19 @@ function handleChessMove(moveInput) {
 
     if (normalizedMove === correctMove) {
         // SUCCESS PATH
-        gameTextEl.innerHTML = `**Your move (Qg3) is brilliant!** The Black King has no escape. The path forward clears before you.`;
-        gameState.chessPuzzleComplete = true;
+        gameTextEl.innerHTML = `<strong>Your move (Qg3) is brilliant!</strong> The Black King has no escape. The path forward clears before you.`;
 
         // Button to proceed
         const proceedButton = document.createElement('button');
         proceedButton.innerText = 'Continue to the Gate';
         proceedButton.onclick = () => {
-            gameState.currentScene = 'puzzle_gate'; // Returns to the gate to check for final party invite
-            renderScene();
+            completePuzzle('chess');
         };
         choiceContainerEl.innerHTML = ''; // Clear previous buttons
         choiceContainerEl.appendChild(proceedButton);
     } else {
         // FAILURE PATH
-        gameTextEl.innerHTML = `**The move "${moveInput}" is not checkmate.** The inscription glows red and locks the way. You must try again.`;
+        gameTextEl.innerHTML = `<strong>The move "${moveInput}" is not checkmate.</strong> The inscription glows red and locks the way. You must try again.`;
 
         // Button to retry the puzzle
         const retryButton = document.createElement('button');
@@ -341,79 +367,75 @@ function hidePuzzleImage() {
 }
 
 function renderStarcraftPuzzle() {
-    // Hide the general puzzle image, as this puzzle is text-based
-    hidePuzzleImage();
+    // Display the Archon image
+    puzzleImageEl.style.display = 'block';
+    puzzleImageEl.src = 'archon.webp';
 
     // 1. Set the scenario text
     gameTextEl.innerHTML =
-        'You find yourself in a simulation room. The screen flashes: **Urgent Defense Protocol - Allocate Resources!** You have 200 Minerals and 50 Vespene Gas. Incoming is a small group of light ground units.';
-    gameTextEl.innerHTML +=
-        '<br><br>Which combination of units is the most cost-efficient choice to destroy the threat?';
+        '<br>Two High Templars must give up their lives and merge their spirits to create a single being of pure psionic energy. What is the name of this burning blue powerhouse?';
 
     // Clear old choices
     choiceContainerEl.innerHTML = '';
 
-    // Define the unit costs (simplified) and the choices
-    // Assume 1 Marine (50 Minerals, 0 Gas) is weaker than 1 Marauder (100 Minerals, 25 Gas)
-    // The "correct" choice maximizes power/versatility with the budget.
-    const choices = [
-        {
-            text: 'A: 4 Marines (200 M, 0 G)',
-            isCorrect: false, // Lacks heavy hitting power
-            outcome: 'While cheap, they lack the armor penetration to halt the enemy push.',
-        },
-        {
-            text: 'B: 2 Marauders and 1 Marine (250 M, 50 G)',
-            isCorrect: false, // Over budget!
-            outcome: 'You overspent your budget! The supply depot is incomplete and the defense fails.',
-        },
-        {
-            text: 'C: 1 Marauder and 2 Marines (200 M, 25 G)',
-            isCorrect: true, // Best use of budget, provides mixed firepower
-            outcome:
-                'Excellent allocation! The mixture of anti-armor (Marauder) and volume (Marines) successfully repels the attack.',
-        },
-    ];
+    // Create input field
+    const inputContainer = document.createElement('div');
+    inputContainer.style.display = 'flex';
+    inputContainer.style.gap = '10px';
+    inputContainer.style.alignItems = 'center';
 
-    // 2. Create choice buttons
-    choices.forEach((choice) => {
-        const button = document.createElement('button');
-        button.innerText = choice.text;
+    const answerInput = document.createElement('input');
+    answerInput.type = 'text';
+    answerInput.id = 'starcraft-answer-input';
+    answerInput.placeholder = 'Enter the unit name...';
+    answerInput.style.padding = '10px';
+    answerInput.style.fontSize = '1em';
+    answerInput.style.flex = '1';
+    answerInput.style.border = '2px solid #a38a78';
+    answerInput.style.borderRadius = '5px';
+    answerInput.style.backgroundColor = '#383736';
+    answerInput.style.color = '#f0e6d2';
 
-        button.onclick = () => handleStarcraftChoice(choice);
+    // Create submit button
+    const submitButton = document.createElement('button');
+    submitButton.innerText = 'Submit Answer';
+    submitButton.onclick = () => handleStarcraftAnswer(answerInput.value);
 
-        choiceContainerEl.appendChild(button);
+    // Allow Enter key to submit
+    answerInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleStarcraftAnswer(answerInput.value);
+        }
     });
-}
 
-// 3. The Puzzle Handler
-function handleStarcraftChoice(choice) {
-    if (choice.isCorrect) {
-        // SUCCESS PATH
-        gameTextEl.innerHTML = `**Victory!** ${choice.outcome} The simulation ends, and a portal opens ahead.`;
-        gameState.starcraftPuzzleComplete = true;
+    function handleStarcraftAnswer(input) {
+        const normalizedInput = input.trim().toLowerCase();
+        const correctAnswer = 'archon';
 
-        // Button to proceed
-        const proceedButton = document.createElement('button');
-        proceedButton.innerText = 'Step through the Portal';
-        proceedButton.onclick = () => {
-            gameState.currentScene = 'puzzle_gate'; // Returns to the gate to check for final party invite
-            renderScene();
-        };
-        choiceContainerEl.innerHTML = '';
-        choiceContainerEl.appendChild(proceedButton);
-    } else {
-        // FAILURE PATH
-        gameTextEl.innerHTML = `**Defeat.** ${choice.outcome} The simulation resets. You must find a better way to allocate your resources.`;
+        if (normalizedInput === correctAnswer) {
+            // SUCCESS PATH
+            gameTextEl.innerHTML = `⚡ <strong>Correct!</strong> The Archon is indeed the ultimate fusion of two High Templars. The simulation ends, and a portal opens ahead.`;
 
-        // Button to retry the puzzle
-        const retryButton = document.createElement('button');
-        retryButton.innerText = 'Re-analyze the Resource Allocation (Retry)';
-        retryButton.onclick = () => renderScene(); // Renders the current scene again (the puzzle)
-
-        choiceContainerEl.innerHTML = '';
-        choiceContainerEl.appendChild(retryButton);
+            const proceedButton = document.createElement('button');
+            proceedButton.innerText = 'Step through the Portal';
+            proceedButton.onclick = () => {
+                completePuzzle('starcraft');
+            };
+            choiceContainerEl.innerHTML = '';
+            choiceContainerEl.appendChild(proceedButton);
+        } else {
+            gameTextEl.innerHTML = `<br>Two High Templars must give up their lives and merge their spirits to create a single being of pure psionic energy. What is the name of this burning blue powerhouse?<br><br>❌ <strong>Incorrect.</strong> That is not the name of this powerful psionic being. Try again!`;
+            answerInput.value = '';
+            answerInput.focus();
+        }
     }
+
+    inputContainer.appendChild(answerInput);
+    inputContainer.appendChild(submitButton);
+    choiceContainerEl.appendChild(inputContainer);
+
+    // Focus the input field
+    setTimeout(() => answerInput.focus(), 100);
 }
 
 // Add a constant for the party leader data
@@ -430,11 +452,18 @@ function renderPartyInvite() {
     partyLeaderSpriteEl.style.backgroundImage = `url('${partyLeader.sprite}')`;
     partyLeaderSpriteEl.style.backgroundPosition = `${partyLeader.offset.x}px ${partyLeader.offset.y}px`;
 
+    // Display lol.jpg image
+    puzzleImageEl.style.display = 'block';
+    puzzleImageEl.src = 'lol.jpg';
+
     const charName = characters[gameState.playerCharacter].name;
 
     // 1. Set the dialogue
-    gameTextEl.innerHTML = `You step through the gate and find **${partyLeader.name}**, a gleaming Paladin, waiting for you.`;
-    gameTextEl.innerHTML += `<br><br>**${partyLeader.name} says:** "Well done, ${charName}. I've seen your trial. You possess the unique skill and resolve our company requires. Will you join my party and face the challenges ahead?"`;
+    gameTextEl.innerHTML = `You step through the gate and find <strong>${partyLeader.name}</strong>, a gleaming Paladin, waiting for you.`;
+    gameTextEl.innerHTML += `<br><br><strong>${partyLeader.name} says:</strong> "Well done, ${charName}. I've seen your trial.`;
+    gameTextEl.innerHTML +=
+        '<br>I seek the maiden of the land of Lepsic. There will be challenges ahead, but great reward. You possess the qualities this party needs. With my power, I can grant you the title Warrior of Wilson and Official Groomsmen.';
+    gameTextEl.innerHTML += 'Will you join my (wedding) party and face the challenges ahead?"';
 
     // Clear old choices
     choiceContainerEl.innerHTML = '';
@@ -473,10 +502,11 @@ function renderGameOver() {
 
     // 1. Determine the ending text
     if (gameState.joinedParty) {
-        gameTextEl.innerHTML = '## 🎉 SUCCESS! Party Formed! 🎉';
-        gameTextEl.innerHTML += `<br><br>You have officially joined ${partyLeader.name}'s party! Your combined unique skills will lead to grand adventures. **To be continued...**`;
+        gameTextEl.innerHTML = '<h2>🎉 SUCCESS! Party Formed! 🎉</h2>';
+        gameTextEl.innerHTML += `<br><br>You have officially joined ${partyLeader.name}'s party! Your combined unique skills will lead to grand adventures.`;
+        gameTextEl.innerHTML += `<strong>The prince's courier will be sending you a supply chest for the journey. Look out for a message soon.</strong><br><strong>To be continued...</strong>`;
     } else {
-        gameTextEl.innerHTML = '## 😔 Solitary Path 😔';
+        gameTextEl.innerHTML = '<h2>😔 Solitary Path 😔</h2>';
         gameTextEl.innerHTML += `<br><br>You turn down the offer, choosing to wander alone. ${partyLeader.name} nods respectfully. Your adventure ends here for now, perhaps to start anew another day.`;
     }
 
@@ -489,8 +519,15 @@ function renderGameOver() {
             playerCharacter: null,
             carouselIndex: 0, // Reset carousel index on restart
             currentScene: 'character_select',
+            currentPuzzleIndex: 0, // Reset puzzle progress
             chessPuzzleComplete: false,
             starcraftPuzzleComplete: false,
+            yugiohPuzzleComplete: false,
+            mtgPuzzleComplete: false,
+            vgcComplete: false,
+            diablo2Complete: false,
+            starwarsComplete: false,
+            marioComplete: false,
             joinedParty: false,
         });
         renderScene();
@@ -510,8 +547,15 @@ function restartGame() {
         playerCharacter: null,
         carouselIndex: 0, // Reset carousel index on restart
         currentScene: 'character_select',
+        currentPuzzleIndex: 0, // Reset puzzle progress
         chessPuzzleComplete: false,
         starcraftPuzzleComplete: false,
+        yugiohPuzzleComplete: false,
+        mtgPuzzleComplete: false,
+        vgcComplete: false,
+        diablo2Complete: false,
+        starwarsComplete: false,
+        marioComplete: false,
         joinedParty: false,
     });
     renderScene();
@@ -543,11 +587,14 @@ function initializeGame() {
 initializeGame();
 
 function renderYugiohPuzzle() {
-    hidePuzzleImage(); // No specific board image needed, just text
+    // Display the Duel Arena image
+    puzzleImageEl.style.display = 'block';
+    puzzleImageEl.src = 'duelarena.webp';
 
-    gameTextEl.innerHTML = 'You enter a holographic arena. **Your Goal: Win the duel this turn.**';
+    gameTextEl.innerHTML = 'You enter a holographic arena. <strong>Your Goal: Win the duel this turn.</strong>';
     gameTextEl.innerHTML += '<br>-- Opponent LP: 2000. Field Effect: All Summoned Monsters lose 500 ATK/DEF.';
-    gameTextEl.innerHTML += '<br>-- Your Field: **Flame Swordsman** (1800 ATK). Hand: **Polymerization**.';
+    gameTextEl.innerHTML +=
+        '<br>-- Your Field: <strong>Flame Swordsman</strong> (1800 ATK). Hand: <strong>Polymerization</strong>.';
 
     // Clear old choices
     choiceContainerEl.innerHTML = '';
@@ -570,21 +617,19 @@ function handleYugiohChoice(choice) {
     if (choice.isCorrect) {
         // SUCCESS PATH
         gameTextEl.innerHTML =
-            '🔥 **Victory!** You correctly summoned the ultimate monster and dealt 4000 damage (4500 - 500 ATK penalty). The path ahead is clear.';
-        gameState.yugiohPuzzleComplete = true;
+            '🔥 <strong>Victory!</strong> You correctly summoned the ultimate monster and dealt 4000 damage (4500 - 500 ATK penalty). The path ahead is clear.';
 
         const proceedButton = document.createElement('button');
         proceedButton.innerText = 'Continue to the Gate';
         proceedButton.onclick = () => {
-            gameState.currentScene = 'puzzle_gate'; // Returns to the gate to check for final party invite
-            renderScene();
+            completePuzzle('yugioh');
         };
 
         choiceContainerEl.innerHTML = '';
         choiceContainerEl.appendChild(proceedButton);
     } else {
         // FAILURE PATH
-        gameTextEl.innerHTML = '❌ **Defeat.** That move did not achieve lethal damage. The arena resets.';
+        gameTextEl.innerHTML = '❌ <strong>Defeat.</strong> That move did not achieve lethal damage. The arena resets.';
 
         const retryButton = document.createElement('button');
         retryButton.innerText = 'Try the Duel Again (Retry)';
@@ -602,10 +647,12 @@ function renderMtgPuzzle() {
     hidePuzzleImage(); // No specific board image needed, just text
 
     gameTextEl.innerHTML = 'You find yourself mid-combat, facing a lethal dilemma.';
-    gameTextEl.innerHTML += '<br>-- Opponent LP: **2**. Blocking Creature: **Grizzly Bears** (2/2).';
     gameTextEl.innerHTML +=
-        '<br>-- Your Field: **Goblin Piker** (2/1, attacking). Untapped Mana: **R** (Mountain), **B B** (2 Swamps).';
-    gameTextEl.innerHTML += '<br>-- Your Hand: **Lightning Bolt** (3 damage, cost R), **Disfigure** (-2/-2, cost B).';
+        '<br>-- Opponent LP: <strong>2</strong>. Blocking Creature: <strong>Grizzly Bears</strong> (2/2).';
+    gameTextEl.innerHTML +=
+        '<br>-- Your Field: <strong>Goblin Piker</strong> (2/1, attacking). Untapped Mana: <strong>R</strong> (Mountain), <strong>B B</strong> (2 Swamps).';
+    gameTextEl.innerHTML +=
+        '<br>-- Your Hand: <strong>Lightning Bolt</strong> (3 damage, cost R), <strong>Disfigure</strong> (-2/-2, cost B).';
 
     // Clear old choices
     choiceContainerEl.innerHTML = '';
@@ -643,14 +690,12 @@ function handleMtgChoice(choice) {
     if (choice.isCorrect) {
         // SUCCESS PATH (C is the most direct win)
         gameTextEl.innerHTML =
-            '⚡ **Instant Win!** You correctly identified the most efficient path: using Lightning Bolt directly on the opponent for 3 damage. A magical bridge forms over the chasm.';
-        gameState.mtgPuzzleComplete = true;
+            '⚡ <strong>Instant Win!</strong> You correctly identified the most efficient path: using Lightning Bolt directly on the opponent for 3 damage. A magical bridge forms over the chasm.';
 
         const proceedButton = document.createElement('button');
         proceedButton.innerText = 'Continue to the Gate';
         proceedButton.onclick = () => {
-            gameState.currentScene = 'puzzle_gate'; // Returns to the gate to check for final party invite
-            renderScene();
+            completePuzzle('mtg');
         };
 
         choiceContainerEl.innerHTML = '';
@@ -658,7 +703,7 @@ function handleMtgChoice(choice) {
     } else {
         // FAILURE PATH
         gameTextEl.innerHTML =
-            '📉 **Misplay.** Your choice either misallocated mana or failed to deal lethal damage this turn. The puzzle resets.';
+            '📉 <strong>Misplay.</strong> Your choice either misallocated mana or failed to deal lethal damage this turn. The puzzle resets.';
 
         const retryButton = document.createElement('button');
         retryButton.innerText = 'Re-evaluate the Combat Step (Retry)';
@@ -673,39 +718,280 @@ function handleMtgChoice(choice) {
 }
 
 function renderPokemonPuzzle() {
-    hidePuzzleImage();
-    gameTextEl.innerHTML = '## ⚔️ VGC CHAMPIONSHIP FINALS ##';
-    gameTextEl.innerHTML +=
-        "<br>The opponent's **Primal Groudon** is locking in **Precipice Blades** (Ground). You need to swap into a teammate that can ignore the attack.";
+    // Display the Gengar image
+    puzzleImageEl.style.display = 'block';
+    puzzleImageEl.src = 'gengar.png';
+
+    gameTextEl.innerHTML = '<h2>👻 A MYSTERIOUS ENCOUNTER</h2>';
+    gameTextEl.innerHTML += "<br>A shadowy figure blocks your path. You must say it's name to pass. What is it's name?";
 
     choiceContainerEl.innerHTML = '';
 
-    const choices = [
-        { text: 'A: Switch to Incineroar', isCorrect: false, msg: 'Ground is super-effective! Incineroar faints.' },
-        { text: 'B: Switch to Togekiss', isCorrect: true, msg: 'Flying type is immune! Togekiss takes 0 damage.' },
-        { text: 'C: Switch to Iron Hands', isCorrect: false, msg: 'Electric is weak to Ground! Iron Hands faints.' },
-    ];
+    // Create input field
+    const inputContainer = document.createElement('div');
+    inputContainer.style.display = 'flex';
+    inputContainer.style.gap = '10px';
+    inputContainer.style.alignItems = 'center';
 
-    choices.forEach((choice) => {
-        const button = document.createElement('button');
-        button.innerText = choice.text;
-        button.onclick = () => {
-            if (choice.isCorrect) {
-                gameTextEl.innerHTML = `✅ **Correct!** ${choice.msg} Kyogre switches in safely next turn and washes away the competition.`;
-                gameState.vgcComplete = true; // Add this flag to gameState
-                const next = document.createElement('button');
-                next.innerText = 'Proceed to the Gate';
-                next.onclick = () => {
-                    gameState.currentScene = 'puzzle_gate'; // Returns to the gate to check for final party invite
-                    renderScene();
-                };
-                choiceContainerEl.innerHTML = '';
-                choiceContainerEl.appendChild(next);
-            } else {
-                gameTextEl.innerHTML = `❌ **Ouch!** ${choice.msg} You lose your momentum. Try the set again!`;
-                // Add Retry button here...
-            }
-        };
-        choiceContainerEl.appendChild(button);
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.id = 'pokemon-name-input';
+    nameInput.placeholder = 'Enter the name...';
+    nameInput.style.padding = '10px';
+    nameInput.style.fontSize = '1em';
+    nameInput.style.flex = '1';
+    nameInput.style.border = '2px solid #a38a78';
+    nameInput.style.borderRadius = '5px';
+    nameInput.style.backgroundColor = '#383736';
+    nameInput.style.color = '#f0e6d2';
+
+    // Create submit button
+    const submitButton = document.createElement('button');
+    submitButton.innerText = 'Speak the Name';
+    submitButton.onclick = () => handlePokemonName(nameInput.value);
+
+    // Allow Enter key to submit
+    nameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handlePokemonName(nameInput.value);
+        }
     });
+
+    function handlePokemonName(input) {
+        const normalizedInput = input.trim().toLowerCase();
+        const correctName = 'gengar';
+
+        if (normalizedInput === correctName) {
+            // Puzzle complete
+            hidePuzzleImage();
+            gameTextEl.innerHTML = `✅ <strong>The shadowy figure fades away...</strong> You've spoken the name! The path is clear.`;
+            const next = document.createElement('button');
+            next.innerText = 'Proceed to the Gate';
+            next.onclick = () => {
+                completePuzzle('pokemon');
+            };
+            choiceContainerEl.innerHTML = '';
+            choiceContainerEl.appendChild(next);
+        } else {
+            gameTextEl.innerHTML = `<h2>👻 A MYSTERIOUS ENCOUNTER</h2><br>A shadowy figure blocks your path. You must say it's name to pass. What is it's name?<br><br>❌ <strong>That's not right...</strong> The figure grows darker. Try again!`;
+            nameInput.value = '';
+            nameInput.focus();
+        }
+    }
+
+    inputContainer.appendChild(nameInput);
+    inputContainer.appendChild(submitButton);
+    choiceContainerEl.appendChild(inputContainer);
+
+    // Focus the input field
+    setTimeout(() => nameInput.focus(), 100);
+}
+
+function renderDiablo2Puzzle() {
+    hidePuzzleImage();
+
+    gameTextEl.innerHTML =
+        '<br>Before you stands an ancient gate, sealed with Horadric runes. Three glowing symbols pulse with power: <strong>Jah</strong>, <strong>Ith</strong>, and <strong>Ber</strong>.';
+    gameTextEl.innerHTML +=
+        '<br><br>A voice echoes: "Speak the word of power, the name forged from these three runes, and the gate shall open."';
+
+    choiceContainerEl.innerHTML = '';
+
+    // Create input field
+    const inputContainer = document.createElement('div');
+    inputContainer.style.display = 'flex';
+    inputContainer.style.gap = '10px';
+    inputContainer.style.alignItems = 'center';
+
+    const wordInput = document.createElement('input');
+    wordInput.type = 'text';
+    wordInput.id = 'diablo2-word-input';
+    wordInput.placeholder = 'Speak the word of power...';
+    wordInput.style.padding = '10px';
+    wordInput.style.fontSize = '1em';
+    wordInput.style.flex = '1';
+    wordInput.style.border = '2px solid #a38a78';
+    wordInput.style.borderRadius = '5px';
+    wordInput.style.backgroundColor = '#383736';
+    wordInput.style.color = '#f0e6d2';
+
+    // Create submit button
+    const submitButton = document.createElement('button');
+    submitButton.innerText = 'Speak the Word';
+    submitButton.onclick = () => handleDiablo2Word(wordInput.value);
+
+    // Allow Enter key to submit
+    wordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleDiablo2Word(wordInput.value);
+        }
+    });
+
+    function handleDiablo2Word(input) {
+        const normalizedInput = input.trim().toLowerCase();
+        const correctWord = 'enigma';
+
+        if (normalizedInput === correctWord) {
+            // Puzzle complete
+            gameTextEl.innerHTML = `✨ <strong>The gate trembles and opens...</strong> You spoke "Enigma"! The ancient Horadric power recognizes your knowledge. The path forward is clear.`;
+            const next = document.createElement('button');
+            next.innerText = 'Step Through the Gate';
+            next.onclick = () => {
+                completePuzzle('diablo2');
+            };
+            choiceContainerEl.innerHTML = '';
+            choiceContainerEl.appendChild(next);
+        } else {
+            gameTextEl.innerHTML = `Before you stands an ancient gate, sealed with Horadric runes. Three glowing symbols pulse with power: <strong>Jah</strong>, <strong>Ith</strong>, and <strong>Ber</strong>.<br><br>A voice echoes: "Speak the word of power, the name forged from these three runes, and the gate shall open."<br><br>❌ <strong>The runes reject your words...</strong> That is not the name of power. Try again!`;
+            wordInput.value = '';
+            wordInput.focus();
+        }
+    }
+
+    inputContainer.appendChild(wordInput);
+    inputContainer.appendChild(submitButton);
+    choiceContainerEl.appendChild(inputContainer);
+
+    // Focus the input field
+    setTimeout(() => wordInput.focus(), 100);
+}
+
+function renderMarioPuzzle() {
+    hidePuzzleImage();
+
+    gameTextEl.innerHTML =
+        "You find a door with a star on it. It slides open and you see a staircase that doesn't seem to end. You've seen this before during your days doing jobs for the princess and know the technique required to pass.";
+    gameTextEl.innerHTML += 'Name this 3-letter movement technique."';
+
+    choiceContainerEl.innerHTML = '';
+
+    // Create input field
+    const inputContainer = document.createElement('div');
+    inputContainer.style.display = 'flex';
+    inputContainer.style.gap = '10px';
+    inputContainer.style.alignItems = 'center';
+
+    const techniqueInput = document.createElement('input');
+    techniqueInput.type = 'text';
+    techniqueInput.id = 'mario-technique-input';
+    techniqueInput.placeholder = 'Enter the technique...';
+    techniqueInput.style.padding = '10px';
+    techniqueInput.style.fontSize = '1em';
+    techniqueInput.style.flex = '1';
+    techniqueInput.style.border = '2px solid #a38a78';
+    techniqueInput.style.borderRadius = '5px';
+    techniqueInput.style.backgroundColor = '#383736';
+    techniqueInput.style.color = '#f0e6d2';
+
+    // Create submit button
+    const submitButton = document.createElement('button');
+    submitButton.innerText = 'Execute Technique';
+    submitButton.onclick = () => handleMarioTechnique(techniqueInput.value);
+
+    // Allow Enter key to submit
+    techniqueInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleMarioTechnique(techniqueInput.value);
+        }
+    });
+
+    function handleMarioTechnique(input) {
+        const normalizedInput = input.trim().toLowerCase().replace(/[\s-]/g, '');
+        const correctAnswers = ['blj', 'backwardlongjump'];
+
+        if (correctAnswers.includes(normalizedInput)) {
+            // Puzzle complete
+            gameTextEl.innerHTML = `⭐ <strong>YAHOO! YAHOO! YAHOO! YA-YA-YA-YAHOO!</strong> You've successfully performed the Backward Long Jump! Reality bends as your speed builds infinitely. The impossible stairs are conquered and you're able to continue your journey.`;
+            const next = document.createElement('button');
+            next.innerText = 'Continue onward';
+            next.onclick = () => {
+                completePuzzle('mario');
+            };
+            choiceContainerEl.innerHTML = '';
+            choiceContainerEl.appendChild(next);
+        } else {
+            gameTextEl.innerHTML = `You find a door with a star on it. It slides open and you see a staircase that doesn't seem to end. You've seen this before during your days doing jobs for the princess and know the technique required to pass. Name this 3-letter movement technique."<br><br>❌ <strong>The stairs remain endless...</strong> That's not the right technique. The Star Door remains locked. Try again!`;
+            techniqueInput.value = '';
+            techniqueInput.focus();
+        }
+    }
+
+    inputContainer.appendChild(techniqueInput);
+    inputContainer.appendChild(submitButton);
+    choiceContainerEl.appendChild(inputContainer);
+
+    // Focus the input field
+    setTimeout(() => techniqueInput.focus(), 100);
+}
+
+function renderStarWarsPuzzle() {
+    hidePuzzleImage();
+    puzzleImageEl.style.display = 'block';
+    puzzleImageEl.src = 'rakatan.png';
+
+    gameTextEl.innerHTML = '<h2>✨ THE RAKATAN STAR MAP ✨</h2>';
+    gameTextEl.innerHTML +=
+        '<br>You stand before an ancient Rakatan Computer on the planet Dantooine. The terminal glows with an eerie red light. It scans your mind, detecting a powerful connection to the Force that has been fractured and rebuilt.';
+    gameTextEl.innerHTML +=
+        '<br><br>"Data corruption detected. Memory wipe confirmed. To access the Star Map, you must bypass the Jedi Council\'s programming. Before the betrayal, before the amnesia... speak the name of the Sith Lord who led the crusade against the Republic alongside Malak."';
+
+    choiceContainerEl.innerHTML = '';
+
+    // Create input field
+    const inputContainer = document.createElement('div');
+    inputContainer.style.display = 'flex';
+    inputContainer.style.gap = '10px';
+    inputContainer.style.alignItems = 'center';
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.id = 'starwars-name-input';
+    nameInput.placeholder = 'Speak your true name...';
+    nameInput.style.padding = '10px';
+    nameInput.style.fontSize = '1em';
+    nameInput.style.flex = '1';
+    nameInput.style.border = '2px solid #a38a78';
+    nameInput.style.borderRadius = '5px';
+    nameInput.style.backgroundColor = '#383736';
+    nameInput.style.color = '#f0e6d2';
+
+    // Create submit button
+    const submitButton = document.createElement('button');
+    submitButton.innerText = 'Submit';
+    submitButton.onclick = () => handleStarWarsName(nameInput.value);
+
+    // Allow Enter key to submit
+    nameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleStarWarsName(nameInput.value);
+        }
+    });
+
+    function handleStarWarsName(input) {
+        const normalizedInput = input.trim().toLowerCase();
+        const correctAnswers = ['revan', 'darth revan'];
+
+        if (correctAnswers.includes(normalizedInput)) {
+            // Puzzle complete
+            gameTextEl.innerHTML = `✨ <strong>Access Granted...</strong> "Welcome back, Revan. The Star Map reveals itself. Your memories... your destiny... they were never truly erased." The ancient technology hums to life.`;
+            const next = document.createElement('button');
+            next.innerText = 'View the Star Map';
+            next.onclick = () => {
+                completePuzzle('starwars');
+            };
+            choiceContainerEl.innerHTML = '';
+            choiceContainerEl.appendChild(next);
+        } else {
+            gameTextEl.innerHTML = `<h2>✨ THE RAKATAN STAR MAP ✨</h2><br>You stand before an ancient Rakatan Computer on the planet Dantooine. The terminal glows with an eerie red light. It scans your mind, detecting a powerful connection to the Force that has been fractured and rebuilt.<br><br>"Data corruption detected. Memory wipe confirmed. To access the Star Map, you must bypass the Jedi Council's programming. Before the betrayal, before the amnesia... speak the name of the Sith Lord who led the crusade against the Republic alongside Malak."<br><br>❌ <strong>Access Denied...</strong> "Identity verification failed. The Force signature does not match." Try again!`;
+            nameInput.value = '';
+            nameInput.focus();
+        }
+    }
+
+    inputContainer.appendChild(nameInput);
+    inputContainer.appendChild(submitButton);
+    choiceContainerEl.appendChild(inputContainer);
+
+    // Focus the input field
+    setTimeout(() => nameInput.focus(), 100);
 }
