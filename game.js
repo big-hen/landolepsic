@@ -26,39 +26,39 @@ const characters = {
     boss: {
         name: 'Boss', //rogue
         sprite: 'rogues.png',
-        puzzles: ['chess', 'starwars'], // Array of puzzles in sequence
+        puzzles: ['chess', 'starwars', 'thewire'], // Array of puzzles in sequence - TODO
         // The pixel offsets (32px * column, 32px * row)
         offset: { x: -32 * 3, y: 0 },
     },
     flash: {
         name: 'Flash', // crusader
         sprite: 'rogues.png',
-        puzzles: ['starcraft', 'diablo2'], // Array of puzzles in sequence
+        puzzles: ['starcraft', 'diablo2', 'thewire'], // Array of puzzles in sequence - TODO - could add mario
         // Character is in the 2nd column (index 1)
         offset: { x: -32, y: -32 * 3 },
     },
     dizzle: {
         name: 'Dizzle', // priest
         sprite: 'rogues.png',
-        puzzles: ['yugioh', 'pokemon'], // Array of puzzles in sequence
+        puzzles: ['yugioh', 'pokemon', 'northgard', 'terraria'], // Array of puzzles in sequence - TODO
         offset: { x: -32 * 2, y: -32 * 2 },
     },
     davis: {
         name: 'Davis', // bard
         sprite: 'rogues.png',
-        puzzles: ['pokemon'], // Array of puzzles in sequence
+        puzzles: ['vcg', 'dustforce', 'guitar'], // Array of puzzles in sequence - TODO
         offset: { x: -32 * 4, y: -32 * 4 },
     },
     scabs: {
         name: 'Scabs', // ranger?
         sprite: 'rogues.png',
-        puzzles: ['mtg'], // Array of puzzles in sequence
+        puzzles: ['mtg', 'nier', 'ffx'], // Array of puzzles in sequence - TODO - could add gwen, crumpet
         offset: { x: -32 * 2, y: -32 * 3 },
     },
     monty: {
         name: 'Monty', // mage
         sprite: 'rogues.png',
-        puzzles: ['mario'], // Array of puzzles in sequence
+        puzzles: ['mario', 'isaac', 'clicker', 'balatro', 'terraria'], // Array of puzzles in sequence - TODO
         offset: { x: 0, y: -32 * 4 },
     },
     // Add more characters here using their correct (negative) offsets
@@ -222,6 +222,7 @@ function completePuzzle(puzzleType) {
         diablo2: 'diablo2Complete',
         starwars: 'starwarsComplete',
         mario: 'marioComplete',
+        dustforce: 'dustforceComplete',
     };
 
     if (completionFlags[puzzleType]) {
@@ -258,6 +259,7 @@ function renderPuzzleGate() {
         diablo2: renderDiablo2Puzzle,
         starwars: renderStarWarsPuzzle,
         mario: renderMarioPuzzle,
+        dustforce: renderDustforcePuzzle,
     };
 
     if (puzzleRenderers[puzzleType]) {
@@ -528,6 +530,7 @@ function renderGameOver() {
             diablo2Complete: false,
             starwarsComplete: false,
             marioComplete: false,
+            dustforceComplete: false,
             joinedParty: false,
         });
         renderScene();
@@ -556,6 +559,7 @@ function restartGame() {
         diablo2Complete: false,
         starwarsComplete: false,
         marioComplete: false,
+        dustforceComplete: false,
         joinedParty: false,
     });
     renderScene();
@@ -995,3 +999,97 @@ function renderStarWarsPuzzle() {
     // Focus the input field
     setTimeout(() => nameInput.focus(), 100);
 }
+
+function renderDustforcePuzzle() {
+    // Display the dustman.gif image
+    puzzleImageEl.style.display = 'block';
+    puzzleImageEl.src = 'dustman.gif';
+
+    gameTextEl.innerHTML = '<h2>💨 THE HALL OF FLOW 💨</h2>';
+    gameTextEl.innerHTML +=
+        '<br>You enter a hallway thick with dust, leaves, and sludge. A broom-wielding figure stands at the end, eyes glowing with a calm, blue light. He tells you that only those who achieve true "Flow" can pass.';
+    gameTextEl.innerHTML +=
+        '<br><br><strong>The Janitor speaks:</strong> "To unlock the red doors of the world and prove your mastery over the filth, you must achieve the highest possible rank. Name the double-letter grade awarded only for 100% Completion and 100% Finesse."';
+
+    choiceContainerEl.innerHTML = '';
+
+    // Create input field
+    const inputContainer = document.createElement('div');
+    inputContainer.style.display = 'flex';
+    inputContainer.style.gap = '10px';
+    inputContainer.style.alignItems = 'center';
+
+    const rankInput = document.createElement('input');
+    rankInput.type = 'text';
+    rankInput.id = 'dustforce-rank-input';
+    rankInput.placeholder = 'Enter the rank...';
+    rankInput.style.padding = '10px';
+    rankInput.style.fontSize = '1em';
+    rankInput.style.flex = '1';
+    rankInput.style.border = '2px solid #a38a78';
+    rankInput.style.borderRadius = '5px';
+    rankInput.style.backgroundColor = '#383736';
+    rankInput.style.color = '#f0e6d2';
+
+    // Create submit button
+    const submitButton = document.createElement('button');
+    submitButton.innerText = 'Submit Rank';
+    submitButton.onclick = () => handleDustforceRank(rankInput.value);
+
+    // Allow Enter key to submit
+    rankInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleDustforceRank(rankInput.value);
+        }
+    });
+
+    function handleDustforceRank(input) {
+        const normalizedInput = input.trim().toLowerCase().replace(/[\s-]/g, '');
+        const correctAnswers = ['ss', 'ssrank'];
+
+        if (correctAnswers.includes(normalizedInput)) {
+            // Puzzle complete
+            gameTextEl.innerHTML = `✨ <strong>Perfect Flow Achieved!</strong> "SS Rank... the mark of a true janitor," the dustman nods approvingly. "You understand what it means to achieve perfection in cleansing. The red doors open for you." The hallway sparkles clean, and the path forward is clear.`;
+            const next = document.createElement('button');
+            next.innerText = 'Continue Through the Red Doors';
+            next.onclick = () => {
+                completePuzzle('dustforce');
+            };
+            choiceContainerEl.innerHTML = '';
+            choiceContainerEl.appendChild(next);
+        } else {
+            gameTextEl.innerHTML = `<h2>💨 THE HALL OF FLOW 💨</h2><br>You enter a hallway thick with dust, leaves, and sludge. A broom-wielding figure stands at the end, eyes glowing with a calm, blue light. He tells you that only those who achieve true "Flow" can pass.<br><br><strong>The Janitor speaks:</strong> "To unlock the red doors of the world and prove your mastery over the filth, you must achieve the highest possible rank. Name the double-letter grade awarded only for 100% Completion and 100% Finesse."<br><br>❌ <strong>The Flow is broken...</strong> "That is not the rank of mastery," the dustman shakes his head. The dust swirls around you. Try again!`;
+            rankInput.value = '';
+            rankInput.focus();
+        }
+    }
+
+    inputContainer.appendChild(rankInput);
+    inputContainer.appendChild(submitButton);
+    choiceContainerEl.appendChild(inputContainer);
+
+    // Focus the input field
+    setTimeout(() => rankInput.focus(), 100);
+}
+
+// VGC players spend half their lives looking at "Type Charts." The simplest but most satisfying check is identifying a 4x weakness (Double Weakness) on a top-tier competitive Pokemon.
+
+// The Scenario: A holographic display of Landorus-Therian (a VGC legend) appears. The computer chirps: "Threat Detected: Ground/Flying Type. Selecting counter-measures... Which elemental type of move deals 4x (quadruple) damage to this target?"
+
+// The Question: "Type the elemental category (e.g., Fire, Water, etc.):"
+
+// The Code Logic:
+
+// Correct Answer: ice
+
+// Hint if they fail: "Think of what happens when you freeze a bird or a desert."
+// -----
+// In VGC, controlling who moves first is everything. One specific move completely flips the game on its head, making the slowest Pokémon the fastest.
+
+// The Scenario: Your fast, agile Sweepers are ready to strike, but the opponent’s bulky, slow Hatterene uses a mysterious move. Suddenly, the world is "twisted," and your fast Pokémon are forced to move last.
+
+// The Question: "To survive the onslaught of faster foes, the slow must become the swift. Name the move that creates a 5-turn 'twisted dimension' where Pokémon with the lowest Speed stat move first."
+
+// The Input: Trick Room
+
+// Why it works: Trick Room is a cornerstone archetype of VGC. Knowing how to set it up (or stop it) is a fundamental skill.
